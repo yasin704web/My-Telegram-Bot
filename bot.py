@@ -11,7 +11,7 @@ from telegram.ext import (
 
 TOKEN = os.getenv("TOKEN")
 
-TRUST_CHANNEL = "https://t.me/USERNAME_CHANNEL"
+TRUST_CHANNEL = "Sellpakesbot"
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
