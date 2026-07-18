@@ -1,5 +1,7 @@
 import os
+import threading
 
+from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -11,7 +13,23 @@ from telegram.ext import (
 
 TOKEN = os.getenv("TOKEN")
 
-TRUST_CHANNEL = "Sellpakesbot"
+TRUST_CHANNEL = "https://t.me/USERNAME_CHANNEL"
+
+
+# بخش وب برای Render
+app_web = Flask(__name__)
+
+@app_web.route("/")
+def home():
+    return "Bot is running 🚀"
+
+
+def run_web():
+    app_web.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+
+
+# شروع وب سرور در کنار ربات
+threading.Thread(target=run_web).start()
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -39,9 +57,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "🔥 به فروشگاه فایل حرفه‌ای خوش آمدید\n\n"
-        "✅ محصولات کاربردی و تست شده\n"
-        "✅ آموزش ساده و کاربردی\n"
-        "✅ پشتیبانی برای راهنمایی\n\n"
+        "✅ محصولات کاربردی\n"
+        "✅ پشتیبانی\n"
+        "✅ فایل‌های آموزشی\n\n"
         "انتخاب کنید 👇",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
@@ -52,36 +70,26 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-
     if query.data == "robot_pack":
-
         await query.edit_message_text(
             "🤖 پکیج ربات تلگرام\n\n"
-            "✔️ سورس آماده ربات\n"
-            "✔️ آموزش نصب\n"
-            "✔️ مناسب شروع برنامه نویسی\n\n"
-            "برای خرید با پشتیبانی ارتباط بگیرید:\n"
+            "برای خرید و اطلاعات بیشتر:\n"
             "@FF_Ranked0011"
         )
-
 
     elif query.data == "support":
-
         await query.edit_message_text(
-            "📞 پشتیبانی فروشگاه\n\n"
-            "پیام دهید:\n"
+            "📞 پشتیبانی:\n"
             "@FF_Ranked0011"
         )
 
 
-app = ApplicationBuilder().token(TOKEN).build()
+bot = ApplicationBuilder().token(TOKEN).build()
 
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(button))
+bot.add_handler(CommandHandler("start", start))
+bot.add_handler(CallbackQueryHandler(button))
 
 
 print("ربات فروش فایل روشن شد 🚀")
 
-
-app.run_polling()
+bot.run_polling()
