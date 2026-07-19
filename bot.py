@@ -13,7 +13,7 @@ from telegram.ext import (
 
 TOKEN = os.getenv("TOKEN")
 
-TRUST_CHANNEL = "https://t.me/USERNAME_CHANNEL"
+TRUST_CHANNEL = "https://t.me/+blrD4zwmKgwzNmE0"
 
 
 # بخش وب برای Render
