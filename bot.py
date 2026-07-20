@@ -15,8 +15,8 @@ from telegram.ext import (
 
 TOKEN = os.getenv("TOKEN")
 
-TRUST_CHANNEL = "لینک_چنل_تو"
-SUPPORT_ID = "آیدی_پشتیبانی"
+TRUST_CHANNEL = "https://t.me/+blrD4zwmKgwzNmE0"
+SUPPORT_ID = "6847301983"
 
 ADMIN_ID = 6847301983
 
