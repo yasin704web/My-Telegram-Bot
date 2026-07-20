@@ -7,21 +7,28 @@ from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     CallbackQueryHandler,
-    ContextTypes
+    MessageHandler,
+    ContextTypes,
+    filters
 )
+
 
 TOKEN = os.getenv("TOKEN")
 
-TRUST_CHANNEL = "https://t.me/+blrD4zwmKgwzNmE0"
-SUPPORT_ID = "FF_Ranked0011"
+TRUST_CHANNEL = "لینک_چنل_تو"
+SUPPORT_ID = "آیدی_پشتیبانی"
 
-# آیدی عددی خودت را اینجا بگذار
 ADMIN_ID = 6847301983
+
 
 # ذخیره کاربران
 USERS = {}
 
+# ذخیره پکیج عکس و متن
+PACKAGE = []
 
+
+# برای روشن ماندن در Render
 app_web = Flask(__name__)
 
 
@@ -37,38 +44,14 @@ def run_web():
     )
 
 
-threading.Thread(target=run_web).start()
+threading.Thread(
+    target=run_web,
+    daemon=True
+).start()
 
 
 
-# پکیج
-PACKAGE = [
-    ("images/1.jpg", "متن آموزش 1"),
-    ("images/2.jpg", "متن آموزش 2"),
-    ("images/3.jpg", "متن آموزش 3"),
-    ("images/4.jpg", "متن آموزش 4"),
-    ("images/5.jpg", "متن آموزش 5"),
-    ("images/6.jpg", "متن آموزش 6"),
-    ("images/7.jpg", "متن آموزش 7"),
-    ("images/8.jpg", "متن آموزش 8"),
-    ("images/9.jpg", "متن آموزش 9"),
-    ("images/10.jpg", "متن آموزش 10"),
-    ("images/11.jpg", "متن آموزش 11"),
-    ("images/12.jpg", "متن آموزش 12"),
-    ("images/13.jpg", "متن آموزش 13"),
-    ("images/14.jpg", "متن آموزش 14"),
-    ("images/15.jpg", "متن آموزش 15"),
-    ("images/16.jpg", "متن آموزش 16"),
-    ("images/17.jpg", "متن آموزش 17"),
-    ("images/18.jpg", "متن آموزش 18"),
-    ("images/19.jpg", "متن آموزش 19"),
-    ("images/20.jpg", "متن آموزش 20"),
-    ("images/21.jpg", "متن آموزش 21"),
-]
-
-
-
-# استارت
+# استارت ربات
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user = update.message.from_user
@@ -78,26 +61,88 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
     keyboard = [
-        [InlineKeyboardButton("🤖 پکیج ربات", callback_data="robot_pack")],
-        [InlineKeyboardButton("⭐ چنل اعتماد", url=TRUST_CHANNEL)],
-        [InlineKeyboardButton("📞 پشتیبانی", callback_data="support")]
+        [
+            InlineKeyboardButton(
+                "📦 پکیج",
+                callback_data="package"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "⭐ چنل اعتماد",
+                url=TRUST_CHANNEL
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "📞 پشتیبانی",
+                callback_data="support"
+            )
+        ]
     ]
 
 
     await update.message.reply_text(
-        "🔥 به فروشگاه فایل حرفه‌ای خوش آمدید\n\n"
-        "انتخاب کنید 👇",
+        "🔥 خوش آمدید\n\nانتخاب کنید 👇",
         reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+    # دریافت عکس از ادمین و ذخیره در پکیج
+async def save_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if update.message.from_user.id != ADMIN_ID:
+        return
+
+    photo = update.message.photo[-1]
+
+    caption = update.message.caption
+
+    if not caption:
+        caption = "بدون متن"
+
+
+    file = await context.bot.get_file(photo.file_id)
+
+
+    filename = f"package_{len(PACKAGE)+1}.jpg"
+
+
+    await file.download_to_drive(filename)
+
+
+    PACKAGE.append(
+        (
+            filename,
+            caption
+        )
+    )
+
+
+    await update.message.reply_text(
+        f"✅ عکس ذخیره شد\n"
+        f"تعداد پکیج: {len(PACKAGE)}"
     )
 
 
 
-# ارسال پکیج
+
+
+# ارسال پکیج به یک کاربر خاص
 async def send_package(chat_id, context):
+
+    if len(PACKAGE) == 0:
+
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text="❌ هنوز پکیجی ساخته نشده."
+        )
+
+        return
+
 
     for img, text in PACKAGE:
 
         try:
+
             await context.bot.send_photo(
                 chat_id=chat_id,
                 photo=open(img, "rb"),
@@ -105,12 +150,14 @@ async def send_package(chat_id, context):
             )
 
         except Exception as e:
-            print("خطا:", e)
+
+            print(e)
 
 
 
 
-# ارسال دستی توسط ادمین
+
+# دستور ارسال توسط ادمین
 async def send_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if update.message.from_user.id != ADMIN_ID:
@@ -120,18 +167,33 @@ async def send_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) == 0:
 
         await update.message.reply_text(
-            "مثال:\n/send 123456789"
+            "مثال:\n/send username"
         )
 
         return
 
 
 
-    user_id = int(context.args[0])
+    username = context.args[0].replace("@", "")
+
+
+
+    if username not in USERS:
+
+        await update.message.reply_text(
+            "❌ این کاربر هنوز ربات را استارت نکرده."
+        )
+
+        return
+
+
+
+    user_id = USERS[username]
+
 
 
     await update.message.reply_text(
-        "📦 ارسال پکیج شروع شد..."
+        "📦 ارسال شروع شد..."
     )
 
 
@@ -141,8 +203,15 @@ async def send_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+    await update.message.reply_text(
+        "✅ ارسال تمام شد."
+    )
 
-# دکمه‌ها
+
+
+
+
+# دکمه ها
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
@@ -150,82 +219,53 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
 
-    if query.data == "robot_pack":
-
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "💰 خرید پکیج 199,000 تومان",
-                    callback_data="buy"
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    "🔙 برگشت",
-                    callback_data="back"
-                )
-            ]
-        ]
-
-
-        await query.edit_message_text(
-            "🤖 پکیج ربات تلگرام\n\n"
-            "📦 شامل آموزش کامل\n\n"
-            "برای خرید بزن 👇",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-
-
-
-    elif query.data == "buy":
-
-        await query.message.reply_text(
-            "💳 برای خرید با پشتیبانی تماس بگیرید."
-        )
-
-
-
-    elif query.data == "support":
+    if query.data == "support":
 
         await query.edit_message_text(
             f"📞 پشتیبانی:\n@{SUPPORT_ID}"
         )
 
 
-
-    elif query.data == "back":
-
-        keyboard = [
-            [InlineKeyboardButton("🤖 پکیج ربات", callback_data="robot_pack")],
-            [InlineKeyboardButton("⭐ چنل اعتماد", url=TRUST_CHANNEL)],
-            [InlineKeyboardButton("📞 پشتیبانی", callback_data="support")]
-        ]
-
+    elif query.data == "package":
 
         await query.edit_message_text(
-            "🔥 به فروشگاه فایل حرفه‌ای خوش آمدید",
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            "📦 پکیج آماده خرید است."
         )
-
-
-
-
-
+        # ساخت ربات
 bot = ApplicationBuilder().token(TOKEN).build()
 
 
+# دستورات
 bot.add_handler(
-    CommandHandler("start", start)
+    CommandHandler(
+        "start",
+        start
+    )
 )
 
 
 bot.add_handler(
-    CommandHandler("send", send_command)
+    CommandHandler(
+        "send",
+        send_command
+    )
 )
 
 
+# دریافت عکس فقط برای ادمین
 bot.add_handler(
-    CallbackQueryHandler(button)
+    MessageHandler(
+        filters.PHOTO,
+        save_photo
+    )
+)
+
+
+# دکمه ها
+bot.add_handler(
+    CallbackQueryHandler(
+        button
+    )
 )
 
 
