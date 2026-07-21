@@ -48,7 +48,7 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "support":
         await query.edit_message_text(
             "📞 پشتیبانی:\n\n"
-            "برای ارتباط با پشتیبانی پیام دهید."
+            "@FF_Ranked0011:نام کاربری پشتیبانی"
         )
 
     elif query.data == "file":
