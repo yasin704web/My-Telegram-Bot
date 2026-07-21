@@ -90,7 +90,7 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "💳 مبلغ را به کارت زیر واریز کنید:\n\n"
             f"{CARD_NUMBER}\n\n"
-            "بعد از پرداخت، عکس رسید را ارسال کنید."
+            " بعد از پرداخت، عکس رسید را به پشتیبانی ارسال کنید و پس از تایید پکیج‌را تحویل بگیرید."
         )
 
 
