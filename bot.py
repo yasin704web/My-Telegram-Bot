@@ -1,5 +1,5 @@
 import os
-
+import requests
 from telegram import (
     Update,
     InlineKeyboardButton,
