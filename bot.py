@@ -130,11 +130,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         except Exception as e:
 
-            print(e)
+    print("PAYMENT ERROR:", e)
 
-            await query.edit_message_text(
-                "❌ خطای ارتباط با درگاه"
-            )
+    await query.edit_message_text(
+        f"❌ خطا:\n{e}"
+    )
 
 
 
