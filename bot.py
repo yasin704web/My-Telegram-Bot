@@ -1,30 +1,42 @@
 import os
+import threading
 import requests
-from telegram import (
-    Update,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup
-)
 
+from flask import Flask, request
+
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
-    ContextTypes,
-    MessageHandler,
-    filters
+    ContextTypes
 )
 
 
 TOKEN = os.getenv("TOKEN")
+MERCHANT = os.getenv("MERCHANT")
 
-ADMIN_ID = 6847301983
+CALLBACK_URL = "https://my-telegram-bot-se9i.onrender.com/verify"
 
-CARD_NUMBER = "5022-2915-1837-1222"
 
-FILE_NAME = "ربات تلگرام"
-PRICE = "160 هزار تومان"
+# ---------- Flask ----------
 
+app_flask = Flask(__name__)
+
+
+@app_flask.route("/")
+def home():
+    return "Smartix Bot is running ✅"
+
+
+@app_flask.route("/verify", methods=["GET", "POST"])
+def verify():
+    print("VERIFY DATA:", request.args)
+    return "ok"
+
+
+
+# ---------- Telegram ----------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -37,7 +49,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ],
         [
             InlineKeyboardButton(
-                "📂 فروش فایل",
+                "📂 فروش فایل 1",
                 callback_data="file"
             )
         ]
@@ -46,142 +58,121 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "سلام 👋\n\n"
         "من ربات Smartix هستم 🤖\n"
-        "یک ربات هوشمند که به شما کمک می‌کنم.",
+        "یک ربات هوشمند که به شما کمک می‌کنم.\n\n"
+        "انتخاب کنید 👇",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
-async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
     await query.answer()
 
+
     if query.data == "support":
 
         await query.edit_message_text(
-            "📞 پشتیبانی:\n@FF_Ranked0011"
+            "📞 پشتیبانی:\n\n@FF_Ranked0011"
         )
 
 
     elif query.data == "file":
 
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "🛒 خرید فایل",
-                    callback_data="buy"
+        data = {
+            "api_key": MERCHANT,
+            "amount": 160000,
+            "callback_uri": CALLBACK_URL
+        }
+
+
+        try:
+
+            response = requests.post(
+                "https://nextpay.org/nx/gateway/token",
+                json=data,
+                timeout=20
+            )
+
+            result = response.json()
+
+
+            if result.get("trans_id"):
+
+                pay_url = (
+                    "https://nextpay.org/nx/gateway/payment/"
+                    + result["trans_id"]
                 )
-            ]
-        ]
-
-        await query.edit_message_text(
-            f"📂 محصول:\n\n"
-            f"🤖 {FILE_NAME}\n"
-            f"💰 قیمت: {PRICE}\n\n"
-            "برای خرید کلیک کنید 👇",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
 
 
-    elif query.data == "buy":
-
-        context.user_data["buying"] = True
-
-        await query.edit_message_text(
-            "💳 مبلغ را به کارت زیر واریز کنید:\n\n"
-            f"{CARD_NUMBER}\n\n"
-            " بعد از پرداخت، عکس رسید را به پشتیبانی ارسال کنید و پس از تایید پکیج‌را تحویل بگیرید."
-        )
-
-
-    elif query.data.startswith("approve"):
-
-        user_id = int(query.data.split("_")[1])
-
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="✅ پرداخت شما تایید شد."
-        )
-
-        await query.edit_message_caption(
-            caption="✅ خرید تایید شد."
-        )
+                keyboard = [
+                    [
+                        InlineKeyboardButton(
+                            "💳 پرداخت",
+                            url=pay_url
+                        )
+                    ]
+                ]
 
 
-    elif query.data.startswith("reject"):
-
-        user_id = int(query.data.split("_")[1])
-
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="❌ پرداخت شما رد شد."
-        )
-
-        await query.edit_message_caption(
-            caption="❌ خرید رد شد."
-        )
-
-
-async def receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if context.user_data.get("buying"):
-
-        user = update.message.from_user
-
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "✅ تایید خرید",
-                    callback_data=f"approve_{user.id}"
-                ),
-                InlineKeyboardButton(
-                    "❌ رد خرید",
-                    callback_data=f"reject_{user.id}"
+                await query.edit_message_text(
+                    "برای خرید فایل روی پرداخت بزنید 👇",
+                    reply_markup=InlineKeyboardMarkup(keyboard)
                 )
-            ]
-        ]
 
 
-        await context.bot.send_photo(
-            chat_id=ADMIN_ID,
-            photo=update.message.photo[-1].file_id,
-            caption=(
-                "📥 رسید جدید\n\n"
-                f"👤 کاربر: {user.first_name}\n"
-                f"🆔 ID: {user.id}\n"
-                f"📂 محصول: {FILE_NAME}\n"
-                f"💰 مبلغ: {PRICE}"
-            ),
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+            else:
+
+                await query.edit_message_text(
+                    "❌ خطا در ساخت پرداخت"
+                )
 
 
-        await update.message.reply_text(
-            "✅ رسید شما ارسال شد.\n"
-            "بعد از بررسی اطلاع داده می‌شود."
-        )
+        except Exception as e:
+
+            print(e)
+
+            await query.edit_message_text(
+                "❌ خطای ارتباط با درگاه"
+            )
 
 
-def main():
 
-    app = Application.builder().token(TOKEN).build()
+def run_bot():
 
-    app.add_handler(
+    application = Application.builder().token(TOKEN).build()
+
+    application.add_handler(
         CommandHandler("start", start)
     )
 
-    app.add_handler(
-        CallbackQueryHandler(buttons)
+    application.add_handler(
+        CallbackQueryHandler(button_handler)
     )
 
-    app.add_handler(
-        MessageHandler(filters.PHOTO, receipt)
+    print("Smartix Started ✅")
+
+    application.run_polling()
+
+
+
+def run_web():
+
+    port = int(os.environ.get("PORT", 10000))
+
+    app_flask.run(
+        host="0.0.0.0",
+        port=port
     )
 
-    print("Smartix Running ✅")
-
-    app.run_polling()
 
 
 if __name__ == "__main__":
-    main()
+
+    threading.Thread(
+        target=run_web
+    ).start()
+
+
+    run_bot()
+
