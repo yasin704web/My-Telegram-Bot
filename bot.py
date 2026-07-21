@@ -1,6 +1,11 @@
 import os
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup
+)
+
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -13,9 +18,9 @@ from telegram.ext import (
 
 TOKEN = os.getenv("TOKEN")
 
-ADMIN_USERNAME = "@FF_Ranked0011"
+ADMIN_ID = 6847301983
 
-CARD_NUMBER = "5022291518371222"
+CARD_NUMBER = "5022-2915-1837-1222"
 
 FILE_NAME = "ربات تلگرام"
 PRICE = "160 هزار تومان"
@@ -54,8 +59,7 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == "support":
 
         await query.edit_message_text(
-            "📞 پشتیبانی:\n"
-            f"{ADMIN_USERNAME}"
+            "📞 پشتیبانی:\n@FF_Ranked0011"
         )
 
 
@@ -64,17 +68,17 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "🛒 درخواست خرید",
+                    "🛒 خرید فایل",
                     callback_data="buy"
                 )
             ]
         ]
 
         await query.edit_message_text(
-            "📂 محصول:\n\n"
+            f"📂 محصول:\n\n"
             f"🤖 {FILE_NAME}\n"
             f"💰 قیمت: {PRICE}\n\n"
-            "برای خرید روی دکمه زیر بزنید 👇",
+            "برای خرید کلیک کنید 👇",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
@@ -84,10 +88,37 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["buying"] = True
 
         await query.edit_message_text(
-            "🛒 درخواست خرید ثبت شد.\n\n"
-            "لطفاً مبلغ را به کارت زیر واریز کنید:\n\n"
-            f"💳 {CARD_NUMBER}\n\n"
-            "بعد از پرداخت، عکس رسید را ارسال کنید به پشتیبانی و پس از تایید منتظر بمانید تا پکیج براتون ارسال شود"
+            "💳 مبلغ را به کارت زیر واریز کنید:\n\n"
+            f"{CARD_NUMBER}\n\n"
+            "بعد از پرداخت، عکس رسید را ارسال کنید."
+        )
+
+
+    elif query.data.startswith("approve"):
+
+        user_id = int(query.data.split("_")[1])
+
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="✅ پرداخت شما تایید شد."
+        )
+
+        await query.edit_message_caption(
+            caption="✅ خرید تایید شد."
+        )
+
+
+    elif query.data.startswith("reject"):
+
+        user_id = int(query.data.split("_")[1])
+
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="❌ پرداخت شما رد شد."
+        )
+
+        await query.edit_message_caption(
+            caption="❌ خرید رد شد."
         )
 
 
@@ -95,13 +126,39 @@ async def receipt(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if context.user_data.get("buying"):
 
-        await update.message.forward(
-            chat_id=update.message.chat_id
+        user = update.message.from_user
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "✅ تایید خرید",
+                    callback_data=f"approve_{user.id}"
+                ),
+                InlineKeyboardButton(
+                    "❌ رد خرید",
+                    callback_data=f"reject_{user.id}"
+                )
+            ]
+        ]
+
+
+        await context.bot.send_photo(
+            chat_id=ADMIN_ID,
+            photo=update.message.photo[-1].file_id,
+            caption=(
+                "📥 رسید جدید\n\n"
+                f"👤 کاربر: {user.first_name}\n"
+                f"🆔 ID: {user.id}\n"
+                f"📂 محصول: {FILE_NAME}\n"
+                f"💰 مبلغ: {PRICE}"
+            ),
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
+
         await update.message.reply_text(
-            "✅ رسید شما دریافت شد.\n"
-            "بعد از بررسی، فایل ارسال می‌شود."
+            "✅ رسید شما ارسال شد.\n"
+            "بعد از بررسی اطلاع داده می‌شود."
         )
 
 
@@ -109,17 +166,16 @@ def main():
 
     app = Application.builder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
+    app.add_handler(
+        CommandHandler("start", start)
+    )
 
     app.add_handler(
         CallbackQueryHandler(buttons)
     )
 
     app.add_handler(
-        MessageHandler(
-            filters.PHOTO,
-            receipt
-        )
+        MessageHandler(filters.PHOTO, receipt)
     )
 
     print("Smartix Running ✅")
