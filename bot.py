@@ -35,31 +35,19 @@ def verify():
     return "ok"
 
 
-
 # ---------- Telegram ----------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard = [
-        [
-            InlineKeyboardButton(
-                "📞 پشتیبانی",
-                callback_data="support"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "📂 فروش فایل 1",
-                callback_data="file"
-            )
-        ]
+        [InlineKeyboardButton("📞 پشتیبانی", callback_data="support")],
+        [InlineKeyboardButton("📂 فروش فایل", callback_data="file")]
     ]
 
     await update.message.reply_text(
         "سلام 👋\n\n"
         "من ربات Smartix هستم 🤖\n"
-        "یک ربات هوشمند که به شما کمک می‌کنم.\n\n"
-        "انتخاب کنید 👇",
+        "یکی از گزینه‌ها را انتخاب کنید 👇",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -69,13 +57,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-
     if query.data == "support":
 
         await query.edit_message_text(
             "📞 پشتیبانی:\n\n@FF_Ranked0011"
         )
-
 
     elif query.data == "file":
 
@@ -85,7 +71,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "callback_uri": CALLBACK_URL
         }
 
-
         try:
 
             response = requests.post(
@@ -94,8 +79,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 timeout=20
             )
 
-            result = response.json()
+            print("STATUS:", response.status_code)
+            print("TEXT:", response.text)
 
+            result = response.json()
 
             if result.get("trans_id"):
 
@@ -104,56 +91,45 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     + result["trans_id"]
                 )
 
-
                 keyboard = [
-                    [
-                        InlineKeyboardButton(
-                            "💳 پرداخت",
-                            url=pay_url
-                        )
-                    ]
+                    [InlineKeyboardButton("💳 پرداخت", url=pay_url)]
                 ]
 
-
                 await query.edit_message_text(
-                    "برای خرید فایل روی پرداخت بزنید 👇",
+                    "برای خرید روی پرداخت بزنید 👇",
                     reply_markup=InlineKeyboardMarkup(keyboard)
                 )
-
 
             else:
 
                 await query.edit_message_text(
-                    "❌ خطا در ساخت پرداخت"
+                    f"❌ خطا در ساخت پرداخت:\n{result}"
                 )
 
+        except Exception as e:
 
-except Exception as e:
-    print("PAYMENT ERROR:", e)
+            print("PAYMENT ERROR:", e)
 
-    await query.edit_message_text(
-        f"❌ خطا:\n{e}"
-    )
+            await query.edit_message_text(
+                f"❌ خطای اتصال:\n{e}"
+            )
 
 
+# ---------- Run Bot ----------
 
 def run_bot():
 
     application = Application.builder().token(TOKEN).build()
 
-    application.add_handler(
-        CommandHandler("start", start)
-    )
-
-    application.add_handler(
-        CallbackQueryHandler(button_handler)
-    )
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button_handler))
 
     print("Smartix Started ✅")
 
     application.run_polling()
 
 
+# ---------- Run Flask ----------
 
 def run_web():
 
@@ -165,13 +141,10 @@ def run_web():
     )
 
 
+# ---------- Main ----------
 
 if __name__ == "__main__":
 
-    threading.Thread(
-        target=run_web
-    ).start()
-
+    threading.Thread(target=run_web).start()
 
     run_bot()
-
