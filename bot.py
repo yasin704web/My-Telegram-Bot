@@ -128,8 +128,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
 
 
-        except Exception as e:
-
+except Exception as e:
     print("PAYMENT ERROR:", e)
 
     await query.edit_message_text(
