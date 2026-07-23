@@ -1,114 +1,162 @@
-import os
-import telebot
-from telebot import types
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<title>🎮 Sens FF</title>
 
-# گرفتن توکن از Render (محیط)
-TOKEN = os.getenv("BOT_TOKEN")
+<style>
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:linear-gradient(135deg,#020617,#0f172a);
+  color:white;
+  text-align:center;
+}
 
-bot = telebot.TeleBot(TOKEN)
+h2{
+  margin-top:20px;
+  text-shadow:0 0 20px #38bdf8;
+}
 
-# استارت
-@bot.message_handler(commands=['start'])
-def start(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add("🎮 سنس فری فایر", "🌐 سایت")
+.btn{
+  padding:12px 20px;
+  margin:10px;
+  border:none;
+  border-radius:12px;
+  background:#0ea5e9;
+  color:white;
+  box-shadow:0 0 10px #0ea5e9,0 0 30px #0ea5e9;
+  cursor:pointer;
+}
 
-    bot.send_message(message.chat.id, "سلام 👋 یکی رو انتخاب کن:", reply_markup=markup)
+.card{
+  background:rgba(30,41,59,0.8);
+  margin:6px;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 0 10px #0ea5e9;
+  cursor:pointer;
+}
 
-# سنس
-@bot.message_handler(func=lambda m: m.text == "🎮 سنس فری فایر")
-def sens(message):
-    bot.send_message(message.chat.id, """
-🎮 پکیج سنس فری فایر
+input{
+  padding:10px;
+  width:80%;
+  border-radius:10px;
+  border:none;
+}
 
-💰 قیمت: 15,000 تومان
+.hidden{display:none;}
+</style>
+</head>
 
-💳 شماره کارت:
-5022-2915-1837-1222
+<body>
 
-📌 مراحل خرید:
-1. واریز مبلغ
-2. ارسال مدل گوشی
-3. ارسال فیش
-4. دریافت سنس بعد تایید
-""")
+<h2>🔥 انتخاب سنس حرفه‌ای</h2>
 
-# منوی سایت
-@bot.message_handler(func=lambda m: m.text == "🌐 سایت")
-def site_menu(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add("🛒 فروشگاهی و تجاری")
-    markup.add("🧰 خدماتی")
-    markup.add("🏢 معرفی و شرکتی")
-    markup.add("⚡ تخصصی‌تر")
-    markup.add("🔙 بازگشت")
+<div id="os"></div>
 
-    bot.send_message(message.chat.id, "نوع سایت:", reply_markup=markup)
+<div id="brands" class="hidden"></div>
 
-# فروشگاهی
-@bot.message_handler(func=lambda m: m.text == "🛒 فروشگاهی و تجاری")
-def shop(message):
-    bot.send_message(message.chat.id, """
-🛒 انواع سایت فروشگاهی:
+<div id="models" class="hidden">
+<button class="btn" onclick="back()">🔙 برگشت</button>
+<h3 id="title"></h3>
+<input id="search" placeholder="جستجو..." onkeyup="filter()">
+<div id="list"></div>
+</div>
 
-• سایت فروشگاهی (عمومی)
-• سایت طلافروشی
-• سایت پوشاک و مد
-• سایت لوازم آرایشی
-• سایت دیجیتال و موبایل
-• سایت مبلمان
-• سایت کتاب‌فروشی
-• سایت لوازم خانگی
-• سایت سوپرمارکت آنلاین
-• سایت گل‌فروشی
-""")
+<script>
 
-# خدماتی
-@bot.message_handler(func=lambda m: m.text == "🧰 خدماتی")
-def service(message):
-    bot.send_message(message.chat.id, """
-🧰 سایت‌های خدماتی:
+const BOT = "FF_Ranked0011";
 
-• رزرو هتل
-• رزرو بلیط
-• خدمات پزشکی
-• سایت آموزشی
-• رستوران و غذا
-• خدمات حقوقی
-• آژانس مسافرتی
-• آرایشگاه
-""")
+// سیستم عامل
+const OS = ["Android","iOS"];
 
-# شرکتی
-@bot.message_handler(func=lambda m: m.text == "🏢 معرفی و شرکتی")
-def company(message):
-    bot.send_message(message.chat.id, """
-🏢 سایت‌های معرفی:
+// برندهای اندروید (8 تا)
+const ANDROID_BRANDS = [
+  "Xiaomi","Samsung","Poco","Realme","Oppo","Vivo","Huawei","OnePlus"
+];
 
-• سایت شرکتی
-• پورتفولیو
-• سایت خبری
-• وبلاگ
-• رزومه آنلاین
-• NGO
-""")
+// برندهای iOS
+const IOS_BRANDS = ["iPhone","Apple"];
 
-# تخصصی
-@bot.message_handler(func=lambda m: m.text == "⚡ تخصصی‌تر")
-def pro(message):
-    bot.send_message(message.chat.id, """
-⚡ سایت‌های تخصصی:
+// ساخت مدل‌ها اتوماتیک
+function generateModels(brand){
+  let arr = [];
+  for(let i=1;i<=80;i++){
+    arr.push(brand+" "+i);
+    arr.push(brand+" "+i+" Pro");
+    arr.push(brand+" "+i+" Pro Max");
+    arr.push(brand+" "+i+" Ultra");
+  }
+  return arr;
+}
 
-• املاک
-• خودرو
-• بازی
-• موسیقی
-• ورزشی
-""")
+// ساخت OS
+const osDiv = document.getElementById("os");
+OS.forEach(o=>{
+  let btn = document.createElement("button");
+  btn.className="btn";
+  btn.innerText=o;
+  btn.onclick=()=>showBrands(o);
+  osDiv.appendChild(btn);
+});
 
-# بازگشت
-@bot.message_handler(func=lambda m: m.text == "🔙 بازگشت")
-def back(message):
-    start(message)
+function showBrands(os){
+  osDiv.classList.add("hidden");
+  document.getElementById("brands").classList.remove("hidden");
 
-bot.infinity_polling()
+  let bDiv = document.getElementById("brands");
+  bDiv.innerHTML="";
+
+  let brands = os==="Android" ? ANDROID_BRANDS : IOS_BRANDS;
+
+  brands.forEach(b=>{
+    let btn=document.createElement("button");
+    btn.className="btn";
+    btn.innerText=b;
+    btn.onclick=()=>showModels(b);
+    bDiv.appendChild(btn);
+  });
+}
+
+function showModels(brand){
+  document.getElementById("brands").classList.add("hidden");
+  document.getElementById("models").classList.remove("hidden");
+
+  document.getElementById("title").innerText=brand;
+
+  let list=document.getElementById("list");
+  list.innerHTML="";
+
+  let models = generateModels(brand);
+
+  models.forEach(m=>{
+    let div=document.createElement("div");
+    div.className="card";
+    div.innerText=m;
+
+    div.onclick=()=>{
+      let url="https://t.me/"+BOT+"?start="+encodeURIComponent(m);
+      window.location.href=url;
+    };
+
+    list.appendChild(div);
+  });
+}
+
+function filter(){
+  let val=document.getElementById("search").value.toLowerCase();
+  document.querySelectorAll(".card").forEach(c=>{
+    c.style.display=c.innerText.toLowerCase().includes(val)?"block":"none";
+  });
+}
+
+function back(){
+  document.getElementById("models").classList.add("hidden");
+  document.getElementById("brands").classList.remove("hidden");
+}
+
+</script>
+
+</body>
+</html>
